@@ -30,4 +30,3 @@ This kind of makes sense, because the output is just 1 (not an expression), but 
 4. Add functionality to take Boolean expression as input, and then optimize
 5. More robust input validation
 6. Fix data types types in code
-7. Don't cares

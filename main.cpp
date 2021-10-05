@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cstring>
 
 typedef std::vector<unsigned char> minterm;
 typedef std::set<minterm> minset;
@@ -325,7 +326,12 @@ void petricksMethod(const minset& values, const minset& implicants, minset::iter
 
 }
 
-std::set<minset> quineMcClusky(std::vector<unsigned int> entries) {
+std::set<minset> quineMcClusky(std::vector<unsigned int> careentries, std::vector<unsigned int> dontcare) {
+	std::vector<unsigned int> entries;
+
+	entries.insert(entries.end(), careentries.begin(), careentries.end());
+	entries.insert(entries.end(), dontcare.begin(), dontcare.end());
+
 	//Initialize list
 	List l1;
 	initializeList(l1, entries);
@@ -352,7 +358,8 @@ std::set<minset> quineMcClusky(std::vector<unsigned int> entries) {
 
 	}
 
-	std::set<std::vector<unsigned char>> values = vectorize(entries);
+	//According to research, do not use don't care entries when minimizing in table
+	std::set<std::vector<unsigned char>> values = vectorize(careentries);
 
 	//Identify columns with only one row
 	for(auto x = values.begin(); x != values.end(); ++x) {
@@ -407,16 +414,22 @@ int main(int argc, char** argv) {
 	//{ 1, 3, 5, 10, 12, 11, 13, 14, 15 };
 
 	std::vector<unsigned int> entries;
+	std::vector<unsigned int> dontcare;
 
 	for(int i = 1; i < argc; i++) {
-		entries.push_back(std::stoul(argv[i]));
+		if(std::string(argv[i]).find('d') != std::string::npos) {
+			std::string temp = std::string(argv[i], std::strlen(argv[i]) - 1); //Clear d
+			dontcare.push_back(std::stoul(temp));
+		} else {
+			entries.push_back(std::stoul(argv[i]));
+		}
 	}
 
 	if(argc == 0) {
 		std::cerr << "Please specify terms to minimize" << std::endl;
 	}
 
-	std::set<minset> output = quineMcClusky(entries);
+	std::set<minset> output = quineMcClusky(entries, dontcare);
 
 	for(auto it = output.begin(); it != output.end(); ++it) {
 		printImplicants(*it);

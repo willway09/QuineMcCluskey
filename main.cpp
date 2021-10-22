@@ -14,6 +14,9 @@ std::vector<char> alphabet = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 };
 
+enum OutTypes { LOGIC, C, VHDL } outType = LOGIC;
+bool printImpTables = false;
+
 std::string vecToString(const std::vector<unsigned char>& v) {
 	std::string rtn = "";
 
@@ -62,37 +65,118 @@ std::string vecToAlpha(const std::vector<unsigned char>& v) {
 }
 
 void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
-	std::string rtn1 = "";
-	std::string rtn2 = "";
+	if(outType == LOGIC) {
 
-	for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
-		auto v = *itt;
-		int count = 0;
+		std::string rtn1 = "";
+		std::string rtn2 = "";
 
-		for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
 
-			switch(*it) {
-				case 0:
-					rtn1 += "_";
-					rtn2 += alphabet[count];
-					break;
-				case 1:
-					rtn1 += " ";
-					rtn2 += alphabet[count];
-					break;
-				case 2:
-					//Do nothing here
-					break;
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+
+				switch(*it) {
+					case 0:
+						rtn1 += "_";
+						rtn2 += alphabet[count];
+						break;
+					case 1:
+						rtn1 += " ";
+						rtn2 += alphabet[count];
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
 			}
+
+			rtn1 += "  ";
+			rtn2 += ", ";
+
 		}
 
-		rtn1 += "  ";
-		rtn2 += ", ";
+		std::cout << rtn1 << std::endl;
+		std::cout << rtn2 << std::endl;
+	} else if(outType == C) {
+		std::string rtn = "";
 
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+				switch(*it) {
+					case 0:
+						//Has to be std::string("!"), not "!", because
+						//otherwise wierd memory access occurs
+						//(In this case began printing "nsufficient arguments for: " and 
+						//"sufficient arguments for: ", a string which appears later in the program)
+						//Probably because const char* + std::string operator
+						//is not defined or is beign misused
+						rtn += std::string("!") + alphabet[count];
+						break;
+					case 1:
+						rtn += alphabet[count];
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+
+				if(it + 1 != v.rend()) { //Don't output separator if on last element
+					rtn += " && ";
+				}
+
+			}
+
+			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
+			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
+				rtn += " || ";
+			}
+
+		}
+
+		std::cout << rtn << std::endl;
+	} else if(outType == VHDL) {
+		std::string rtn = "";
+
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			if(v.rbegin() != v.rend()) rtn += "(";
+
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+				switch(*it) {
+					case 0:
+						//See comparable comment in (outType == C) section
+						rtn += std::string("NOT ") + alphabet[count];
+						break;
+					case 1:
+						rtn += alphabet[count];
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+
+				if(it + 1 != v.rend()) { //Don't output separator if on last element
+					rtn += " AND ";
+				}
+
+			}
+			if(v.rbegin() != v.rend()) rtn += ")";
+
+			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
+			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
+				rtn += " OR ";
+			}
+
+		}
+
+		std::cout << rtn << std::endl;
 	}
-
-	std::cout << rtn1 << std::endl;
-	std::cout << rtn2 << std::endl;
 }
 
 //int hammingDistance
@@ -111,8 +195,19 @@ struct List {
 	std::set<std::vector<unsigned char>> implicants;
 	int maxPower = 5;
 
-	std::string toString() {
+	std::string toString(int listnum = -1) {
 		std::string rtn;
+		if(listnum != -1) {
+			for(int i = 0; i < maxPower; i++) {
+				rtn += "===";
+			}
+			rtn += "\n";
+			rtn += "List " + std::to_string(listnum) + "\n";
+			for(int i = 0; i < maxPower; i++) {
+				rtn += "===";
+			}
+			rtn += "\n";
+		}
 		for(auto it = groups.begin(); it != groups.end(); ++it) {
 			rtn += "Group " + std::to_string(it->first) + "\n";
 			for(auto itt = it->second.rbegin(); itt != it->second.rend(); ++itt) {
@@ -131,7 +226,7 @@ struct List {
 				rtn += vecToString(*it) + "\n";
 			}
 			for(int i = 0; i < maxPower; i++) {
-				rtn += "==";
+				rtn += "====";
 			}
 			rtn += "\n";
 		}
@@ -345,7 +440,7 @@ std::set<minset> quineMcClusky(std::vector<unsigned int> careentries, std::vecto
 	while(!its.back().isEmpty()) {
 		its.push_back(iteration(its.back()));
 		count++;
-		//std::cout << its[its.size() - 2].toString() << std::endl;
+		if(printImpTables) std::cout << its[its.size() - 2].toString(its.size() - 1) << std::endl;
 
 	}
 
@@ -408,6 +503,38 @@ std::set<minset> quineMcClusky(std::vector<unsigned int> careentries, std::vecto
 	return rtn;
 }
 
+typedef bool (*arg_handler)(std::vector<std::string> args);
+
+bool handleOut(std::vector<std::string> args) {
+
+	if(args[0] == "logic") {
+		outType = LOGIC;
+	} else if(args[0] == "C") {
+		outType = C;
+	} else if(args[0] == "VHDL") {
+		outType = VHDL;
+	} else {
+		std::cerr << "Invalid output type: " << args[0] << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool handleImpTables(std::vector<std::string> args) {
+	printImpTables = true;
+	return true;	
+}
+
+std::map<std::string, arg_handler> argHandlers = {
+	{ "-out", handleOut },
+	{ "-imptables", handleImpTables }
+};
+
+std::map<std::string, unsigned int> argCounts = {
+	{ "-out", 1 },
+	{ "-imptables", 0 }
+};
+
 int main(int argc, char** argv) {
 	//{ 0, 2, 6, 7, 8, 10, 11, 12, 13, 14, 16, 18, 19, 29, 30 };
 	//{ 0, 1, 3, 7, 8, 9, 11, 15 };
@@ -417,7 +544,35 @@ int main(int argc, char** argv) {
 	std::vector<unsigned int> dontcare;
 
 	for(int i = 1; i < argc; i++) {
-		if(std::string(argv[i]).find('d') != std::string::npos) {
+
+		if(argv[i][0] == '-') { //If argument
+			if(argHandlers.find(argv[i]) != argHandlers.end()) {
+				std::string arg = argv[i];
+				int count = argCounts[arg];
+
+				i++;
+				std::vector<std::string> args;
+				for(int j = 0; j < count; j++) {
+					if(i == argc) {
+						std::cerr << "Insufficient arguments for: " << arg << std::endl;
+						std::cout << "HERE" << std::endl;
+						return -1;
+					}
+					args.push_back(argv[i]);
+				
+					i++;
+				}
+
+				if(!argHandlers[arg](args)) {
+					return -1;
+				}
+
+				i--;
+			} else {
+				std::cerr << "Invalid argument: " << argv[i] << std::endl;
+			}
+
+		} else if(std::string(argv[i]).find('d') != std::string::npos) {
 			std::string temp = std::string(argv[i], std::strlen(argv[i]) - 1); //Clear d
 			dontcare.push_back(std::stoul(temp));
 		} else {

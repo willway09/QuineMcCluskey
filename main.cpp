@@ -105,6 +105,8 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 			auto v = *itt;
 			int count = 0;
 
+			std::vector<std::string> terms;
+
 			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
 				switch(*it) {
 					case 0:
@@ -114,20 +116,26 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 						//"sufficient arguments for: ", a string which appears later in the program)
 						//Probably because const char* + std::string operator
 						//is not defined or is beign misused
-						rtn += std::string("!") + alphabet[count];
+						terms.push_back(std::string("!") + alphabet[count]);
 						break;
 					case 1:
-						rtn += alphabet[count];
+						terms.push_back(std::string(1, alphabet[count]));
 						break;
 					case 2:
 						//Do nothing here
 						break;
 				}
 
-				if(it + 1 != v.rend()) { //Don't output separator if on last element
-					rtn += " && ";
-				}
+			}
 
+			for(auto it = terms.begin(); it != terms.end(); it++) {
+				rtn += *it;
+				if((it + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn += " && ";
+
+				}
 			}
 
 			//if((imps.end() - itt) != 1) { //Don't output separator if on last element

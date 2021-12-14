@@ -147,24 +147,36 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 
 			if(v.rbegin() != v.rend()) rtn += "(";
 
+			std::vector<std::string> terms;
+
 			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
 				switch(*it) {
 					case 0:
 						//See comparable comment in (outType == C) section
-						rtn += std::string("NOT ") + alphabet[count];
+						terms.push_back(std::string("NOT ") + alphabet[count]);
 						break;
 					case 1:
-						rtn += alphabet[count];
+						terms.push_back(std::string(1, alphabet[count]));
 						break;
 					case 2:
 						//Do nothing here
 						break;
 				}
 
-				if(it + 1 != v.rend()) { //Don't output separator if on last element
-					rtn += " AND ";
-				}
+				//if(it + 1 != v.rend() && *(it) != 2) { //Don't output separator if on last element
+				//if(it + 1 != v.rend() && *(it) != 2 && *(it + 1) != 2) { //Don't output separator if on last element
+				//}
 
+			}
+
+			for(auto it = terms.begin(); it != terms.end(); it++) {
+				rtn += *it;
+				if((it + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn += " AND ";
+
+				}
 			}
 			if(v.rbegin() != v.rend()) rtn += ")";
 

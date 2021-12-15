@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstring>
+#include <cctype>
 
 typedef std::vector<unsigned char> minterm;
 typedef std::set<minterm> minset;
@@ -16,6 +17,8 @@ std::vector<char> alphabet = {
 
 enum OutTypes { LOGIC, C, VHDL } outType = LOGIC;
 bool printImpTables = false;
+bool printPos = false;
+int alphaOffset = 0;
 
 std::string vecToString(const std::vector<unsigned char>& v) {
 	std::string rtn = "";
@@ -48,11 +51,11 @@ std::string vecToAlpha(const std::vector<unsigned char>& v) {
 		switch(*it) {
 			case 0:
 				rtn1 += "_";
-				rtn2 += alphabet[count];
+				rtn2 += alphabet[count + alphaOffset];
 				break;
 			case 1:
 				rtn1 += " ";
-				rtn2 += alphabet[count];
+				rtn2 += alphabet[count + alphaOffset];
 				break;
 			case 2:
 				//Do nothing here
@@ -64,7 +67,170 @@ std::string vecToAlpha(const std::vector<unsigned char>& v) {
 	return rtn1 + rtn2;
 }
 
-void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
+
+
+void printImplicantsPos(const std::set<std::vector<unsigned char>>& imps)  {
+	if(outType == LOGIC) {
+		std::string rtn1 = "";
+		std::string rtn2 = "";
+
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			std::vector<std::string> terms;
+			std::vector<bool> invert;
+
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+
+				switch(*it) {
+					case 0:
+						invert.push_back(false);
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
+						break;
+					case 1:
+						invert.push_back(true);
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+			}
+			rtn1 += " ";
+			rtn2 += "(";
+
+			auto it2 = invert.begin();
+			for(auto it1 = terms.begin(); it1 != terms.end(); ++it1, ++it2) {
+
+				if(*it2) {
+					rtn1 += "_";
+				} else {
+					rtn1 += " ";
+				}
+				rtn2 += *it1;
+
+
+				if((it1 + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn2 += " + ";
+					rtn1 += "   ";
+				}
+
+			}
+			rtn1 += " ";
+			rtn2 += ")";
+
+		}
+
+		std::cout << rtn1 << std::endl;
+		std::cout << rtn2 << std::endl;
+	} else if(outType == C) {
+		std::string rtn = "";
+
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			std::vector<std::string> terms;
+
+			rtn += "(";
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+				switch(*it) {
+					case 0:
+						//Has to be std::string("!"), not "!", because
+						//otherwise wierd memory access occurs
+						//(In this case began printing "nsufficient arguments for: " and 
+						//"sufficient arguments for: ", a string which appears later in the program)
+						//Probably because const char* + std::string operator
+						//is not defined or is beign misused
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
+						break;
+					case 1:
+						terms.push_back(std::string("!") + alphabet[count + alphaOffset]);
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+
+			}
+
+			for(auto it = terms.begin(); it != terms.end(); it++) {
+				rtn += *it;
+				if((it + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn += " || ";
+
+				}
+			}
+			rtn += ")";
+
+			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
+			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
+				rtn += " && ";
+			}
+
+		}
+
+		std::cout << rtn << std::endl;
+	} else if(outType == VHDL) {
+		std::string rtn = "";
+
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			if(v.rbegin() != v.rend()) rtn += "(";
+
+			std::vector<std::string> terms;
+
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+				switch(*it) {
+					case 0:
+						//See comparable comment in (outType == C) section
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
+						break;
+					case 1:
+						terms.push_back(std::string("NOT ") + alphabet[count + alphaOffset]);
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+
+				//if(it + 1 != v.rend() && *(it) != 2) { //Don't output separator if on last element
+				//if(it + 1 != v.rend() && *(it) != 2 && *(it + 1) != 2) { //Don't output separator if on last element
+				//}
+
+			}
+
+			for(auto it = terms.begin(); it != terms.end(); it++) {
+				rtn += *it;
+				if((it + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn += " OR ";
+
+				}
+			}
+			if(v.rbegin() != v.rend()) rtn += ")";
+
+			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
+			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
+				rtn += " AND ";
+			}
+
+		}
+
+		std::cout << rtn << std::endl;
+	}
+}
+
+
+void printImplicantsSop(const std::set<std::vector<unsigned char>>& imps) {
 	if(outType == LOGIC) {
 
 		std::string rtn1 = "";
@@ -79,11 +245,11 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 				switch(*it) {
 					case 0:
 						rtn1 += "_";
-						rtn2 += alphabet[count];
+						rtn2 += alphabet[count + alphaOffset];
 						break;
 					case 1:
 						rtn1 += " ";
-						rtn2 += alphabet[count];
+						rtn2 += alphabet[count + alphaOffset];
 						break;
 					case 2:
 						//Do nothing here
@@ -116,10 +282,10 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 						//"sufficient arguments for: ", a string which appears later in the program)
 						//Probably because const char* + std::string operator
 						//is not defined or is beign misused
-						terms.push_back(std::string("!") + alphabet[count]);
+						terms.push_back(std::string("!") + alphabet[count + alphaOffset]);
 						break;
 					case 1:
-						terms.push_back(std::string(1, alphabet[count]));
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
 						break;
 					case 2:
 						//Do nothing here
@@ -161,10 +327,10 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 				switch(*it) {
 					case 0:
 						//See comparable comment in (outType == C) section
-						terms.push_back(std::string("NOT ") + alphabet[count]);
+						terms.push_back(std::string("NOT ") + alphabet[count + alphaOffset]);
 						break;
 					case 1:
-						terms.push_back(std::string(1, alphabet[count]));
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
 						break;
 					case 2:
 						//Do nothing here
@@ -196,6 +362,14 @@ void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
 		}
 
 		std::cout << rtn << std::endl;
+	}
+}
+
+void printImplicants(const std::set<std::vector<unsigned char>>& imps) {
+	if(printPos) {
+		printImplicantsPos(imps);
+	} else {
+		printImplicantsSop(imps);
 	}
 }
 
@@ -545,14 +719,34 @@ bool handleImpTables(std::vector<std::string> args) {
 	return true;	
 }
 
+bool handlePos(std::vector<std::string> args) {
+	//Handle Product of Sums output format
+	printPos = true;
+	return true;
+}
+
+bool handleLetter(std::vector<std::string> args) {
+	if(args[0].length() == 1 && std::isupper(args[0][0])) {
+		alphaOffset = args[0][0] - 65;
+	} else {
+		std::cerr << "Invalid starting letter: " << args[0] << std::endl;
+		return false;
+	}
+	return true;
+}
+
 std::map<std::string, arg_handler> argHandlers = {
 	{ "-out", handleOut },
-	{ "-imptables", handleImpTables }
+	{ "-imptables", handleImpTables },
+	{ "-maxterms", handlePos },
+	{ "-letter", handleLetter }
 };
 
 std::map<std::string, unsigned int> argCounts = {
 	{ "-out", 1 },
-	{ "-imptables", 0 }
+	{ "-imptables", 0 },
+	{ "-maxterms", 0 },
+	{ "-letter", 1 }
 };
 
 int main(int argc, char** argv) {

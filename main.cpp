@@ -19,6 +19,7 @@ enum OutTypes { LOGIC, C, VHDL } outType = LOGIC;
 bool printImpTables = false;
 bool printPos = false;
 int alphaOffset = 0;
+int argMaxPower = -1;
 
 std::string vecToString(const std::vector<unsigned char>& v) {
 	std::string rtn = "";
@@ -464,11 +465,16 @@ void initializeList(List& l, std::vector<unsigned int>& entries) {
 	unsigned int max = entries.back();
 	//std::cout << max << std::endl;
 
-	int maxPower = 0;
+	int maxPower;
 
-	while(max > 0) {
-		max >>= 1;
-		maxPower++;
+	if(argMaxPower != -1) {
+		maxPower = argMaxPower;
+	} else {
+		maxPower = 0;
+		while(max > 0) {
+			max >>= 1;
+			maxPower++;
+		}
 	}
 
 	//std::cout << maxPower << std::endl;
@@ -735,18 +741,30 @@ bool handleLetter(std::vector<std::string> args) {
 	return true;
 }
 
+bool handleMaxPower(std::vector<std::string> args) {
+	try {
+		argMaxPower = std::stoi(args[0]);
+	} catch(std::exception& e) {
+		std::cerr << "Invalid maximum power: " << args[0] << std::endl;
+		return false;
+	}
+	return true;
+}
+
 std::map<std::string, arg_handler> argHandlers = {
 	{ "-out", handleOut },
 	{ "-imptables", handleImpTables },
 	{ "-maxterms", handlePos },
-	{ "-letter", handleLetter }
+	{ "-letter", handleLetter },
+	{ "-maxpower", handleMaxPower }
 };
 
 std::map<std::string, unsigned int> argCounts = {
 	{ "-out", 1 },
 	{ "-imptables", 0 },
 	{ "-maxterms", 0 },
-	{ "-letter", 1 }
+	{ "-letter", 1 },
+	{ "-maxpower", 1 }
 };
 
 int main(int argc, char** argv) {

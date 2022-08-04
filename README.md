@@ -16,10 +16,14 @@ where each `m*` is the index of a minterm in the unoptimized expression (it is a
 Appending `d` to a `m*` term (for example, `1d` or `5d`) flags it as a don't care term, which the algorithm will use for optimization.
 
 Additoinally, flags can be used to modify output.
-Currently there are just 2.
-`-out`, followed by either `logic`, `C`, `VHDL`,  or `verilog` will change the solution output format to one corresponding to Boolean Algebra, C boolean operations, VHDL combinational logic, or Verilog combinational logic respectively.
-Additionally, using the `-imptables` flag will enable output of the implicant lists in each iteration of the first phase of the algorithm.
-This can be useful for learning purposes, or validating the algorithm.
+
+|Flag|Parameters|Description|
+|:------:|:---:|---|
+|`-out`|1|Followed by either `logic`, `C`, `VHDL`,  or `verilog`, will change the solution output format to one corresponding to Boolean Algebra, C boolean operations, VHDL combinational logic, or Verilog combinational logic, respectively.|
+|`-imptables`|0|Enable output of the implicant lists in each iteration of the first phase of the algorithm. This can be useful for learning purposes, or validating the algorithm.|
+|`-maxterms`|0|Treat input values as a maxterm (will output in POS / Product of Sum form)|
+|`-letter`|1|Set the starting letter for variables (for instance, specifying `C` will start lettering from C)|
+|`-maxpower`|1|Set the maximum number of variables used (if unspecified, will use minimum number of variables based on the input values)|
 
 ## Examples
 `./quine 1 5 7 9 13`  

@@ -17,7 +17,7 @@ Appending `d` to a `m*` term (for example, `1d` or `5d`) flags it as a don't car
 
 Additoinally, flags can be used to modify output.
 Currently there are just 2.
-`-out`, followed by either `LOGIC`, `C`, or `VHDL`, will change the solution output format to one corresponding to Boolean Algebra, C boolean operations, or VHDL combinational logic, respectively.
+`-out`, followed by either `logic`, `C`, `VHDL`,  or `verilog` will change the solution output format to one corresponding to Boolean Algebra, C boolean operations, VHDL combinational logic, or Verilog combinational logic respectively.
 Additionally, using the `-imptables` flag will enable output of the implicant lists in each iteration of the first phase of the algorithm.
 This can be useful for learning purposes, or validating the algorithm.
 

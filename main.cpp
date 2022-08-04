@@ -15,7 +15,7 @@ std::vector<char> alphabet = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 };
 
-enum OutTypes { LOGIC, C, VHDL } outType = LOGIC;
+enum OutTypes { LOGIC, C, VHDL, VERILOG } outType = LOGIC;
 bool printImpTables = false;
 bool printPos = false;
 int alphaOffset = 0;
@@ -227,6 +227,56 @@ void printImplicantsPos(const std::set<std::vector<unsigned char>>& imps)  {
 		}
 
 		std::cout << rtn << std::endl;
+	} else if(outType == VERILOG) {
+		std::string rtn = "";
+
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			if(v.rbegin() != v.rend()) rtn += "(";
+
+			std::vector<std::string> terms;
+
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+				switch(*it) {
+					case 0:
+						//See comparable comment in (outType == C) section
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
+						break;
+					case 1:
+						terms.push_back(std::string("~") + alphabet[count + alphaOffset]);
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+
+				//if(it + 1 != v.rend() && *(it) != 2) { //Don't output separator if on last element
+				//if(it + 1 != v.rend() && *(it) != 2 && *(it + 1) != 2) { //Don't output separator if on last element
+				//}
+
+			}
+
+			for(auto it = terms.begin(); it != terms.end(); it++) {
+				rtn += *it;
+				if((it + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn += " | ";
+
+				}
+			}
+			if(v.rbegin() != v.rend()) rtn += ")";
+
+			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
+			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
+				rtn += " & ";
+			}
+
+		}
+
+		std::cout << rtn << std::endl;
 	}
 }
 
@@ -358,6 +408,56 @@ void printImplicantsSop(const std::set<std::vector<unsigned char>>& imps) {
 			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
 			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
 				rtn += " OR ";
+			}
+
+		}
+
+		std::cout << rtn << std::endl;
+	} else if(outType == VERILOG) {
+		std::string rtn = "";
+
+		for(auto itt = imps.begin(); itt != imps.end(); ++itt) {
+			auto v = *itt;
+			int count = 0;
+
+			if(v.rbegin() != v.rend()) rtn += "(";
+
+			std::vector<std::string> terms;
+
+			for(auto it = v.rbegin(); it != v.rend(); ++it, count++) {
+				switch(*it) {
+					case 0:
+						//See comparable comment in (outType == C) section
+						terms.push_back(std::string("~") + alphabet[count + alphaOffset]);
+						break;
+					case 1:
+						terms.push_back(std::string(1, alphabet[count + alphaOffset]));
+						break;
+					case 2:
+						//Do nothing here
+						break;
+				}
+
+				//if(it + 1 != v.rend() && *(it) != 2) { //Don't output separator if on last element
+				//if(it + 1 != v.rend() && *(it) != 2 && *(it + 1) != 2) { //Don't output separator if on last element
+				//}
+
+			}
+
+			for(auto it = terms.begin(); it != terms.end(); it++) {
+				rtn += *it;
+				if((it + 1) == terms.end()) {
+					//Do nothing
+				} else {
+					rtn += " & ";
+
+				}
+			}
+			if(v.rbegin() != v.rend()) rtn += ")";
+
+			//if((imps.end() - itt) != 1) { //Don't output separator if on last element
+			if(std::next(itt) != imps.end()) { //Don't output separator if on last element
+				rtn += " | ";
 			}
 
 		}
@@ -713,6 +813,8 @@ bool handleOut(std::vector<std::string> args) {
 		outType = C;
 	} else if(args[0] == "VHDL") {
 		outType = VHDL;
+	} else if(args[0] == "verilog") {
+		outType = VERILOG;
 	} else {
 		std::cerr << "Invalid output type: " << args[0] << std::endl;
 		return false;
